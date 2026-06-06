@@ -1,0 +1,843 @@
+:root {
+  --bg: #0a0f1c;
+  --panel: #111a2e;
+  --panel-2: #182343;
+  --ink: #e6ecf5;
+  --muted: #a8b8d4;
+  --hub: #f5c451;
+  --hub-bg: #2b2511;
+  --rl: #ff5a5f;
+  --cof: #8ae8cd;
+  --reg: #d6b9f3;
+  --note: #f5bcbc;
+  --p-glyco: #60a5fa;
+  --p-gng:   #c084fc;
+  --p-tca:   #fb923c;
+  --p-etc:   #ef4444;
+  --p-ppp:   #34d399;
+  --p-glyg:  #2dd4bf;
+  --p-fas:   #fbbf24;
+  --p-box:   #e89730;
+  --p-keto:  #b8a4f5;
+  --p-chol:  #f48bc1;
+  --p-urea:  #f87171;
+  --p-aa:    #b8c5d8;
+  --p-heme:  #fb7185;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--ink); font-family: 'Inter','Segoe UI', system-ui, sans-serif; overflow:hidden; }
+#app { display:grid; grid-template-columns: 300px 1fr; height:100vh; }
+
+aside#sidebar {
+  background: linear-gradient(180deg, #0c1424 0%, #0a0f1c 100%);
+  border-right: 1px solid #1f2b48;
+  padding: 18px;
+  overflow-y: auto;
+}
+aside h1 { font-size: 18px; margin: 0 0 4px 0; letter-spacing: -0.02em; }
+aside h2 { font-size: 12px; margin: 18px 0 8px 0; color: #c0d2f0; text-transform: uppercase; letter-spacing: 0.08em; }
+aside p.intro { font-size: 12.5px; line-height: 1.5; color: #cfdcf5; margin: 4px 0 12px 0; }
+.legend { display:flex; flex-direction:column; gap:4px; font-size:12px; }
+.legend .row { display:flex; align-items:center; gap:8px; cursor:pointer; padding:3px 6px; border-radius:4px; color:#cfdcf5; }
+.legend .row:hover { background:#162342; }
+.legend .row.active { background:#1d2c54; color:#fff; }
+.swatch { width:14px; height:14px; border-radius:3px; flex-shrink:0; box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset; }
+.keyitem { font-size: 11.5px; color:#d3dff5; line-height:1.55; margin:3px 0; }
+.keyitem b { color: var(--hub); }
+.keyitem .rl { color: var(--rl); font-weight: 700; }
+.controls { display:flex; gap:6px; margin-top: 14px; flex-wrap:wrap; }
+.controls button {
+  background: var(--panel-2); color: var(--ink); border: 1px solid #2b3a5e;
+  padding: 6px 9px; font-size: 11.5px; border-radius:6px; cursor:pointer;
+  transition: background 0.15s;
+}
+.controls button:hover { background:#22325a; }
+.hint { font-size: 11px; color:#b9c8e3; margin-top: 10px; line-height:1.5; }
+.pill { display:inline-block; padding:1px 6px; border-radius:4px; background:#1d2a4a; color:#bcd0f5; font-size:10.5px; margin-right:3px; }
+
+/* MODE TOGGLE */
+.mode-toggle {
+  margin: 10px 0 4px 0;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(245,196,81,0.10), rgba(255,213,79,0.04));
+  border: 1px solid rgba(245,196,81,0.35);
+  border-radius: 8px;
+}
+.mode-toggle label {
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; font-size: 12.5px; font-weight: 700;
+  color: #fff5d6;
+}
+.mode-toggle input { display: none; }
+.mode-toggle .switch {
+  width: 34px; height: 18px;
+  background: #2a3a5e; border-radius: 10px;
+  position: relative; flex-shrink: 0;
+  transition: background 0.2s;
+}
+.mode-toggle .switch:after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; background: #cfdcf5;
+  border-radius: 50%; transition: left 0.2s;
+}
+.mode-toggle input:checked + .switch { background: #f5c451; }
+.mode-toggle input:checked + .switch:after { left: 18px; background: #2b2511; }
+.mode-toggle .label-text { line-height: 1.3; }
+.mode-toggle .sub { display: block; font-size: 10.5px; color: #c0d2f0; font-weight: 500; margin-top: 1px; }
+
+/* CANVAS */
+#canvas-container {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 20%, #11203d 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, #1a1230 0%, transparent 50%),
+    var(--bg);
+  cursor: grab;
+}
+#canvas-container.dragging { cursor: grabbing; }
+#canvas-transform {
+  transform-origin: 0 0;
+  transform: translate(0,0) scale(1);
+  will-change: transform;
+}
+svg#map { display:block; user-select:none; }
+
+/* SVG node + edge default styles */
+.node rect { fill: #1c2741; stroke: #3a4c75; stroke-width: 1.5; rx:7; ry:7; transition: stroke-width 0.18s, filter 0.18s; }
+.node text.lbl { fill: #f1f5fc; font-size: 13.5px; font-weight: 700; text-anchor: middle; dominant-baseline: middle; pointer-events:none; }
+.node text.sub { fill: #b8c8e2; font-size: 10.5px; text-anchor: middle; dominant-baseline: middle; pointer-events:none; }
+.node.hub rect.outline {
+  fill: #1a1d2e !important;
+  stroke: #ffffff !important;
+  stroke-width: 3 !important;
+  rx: 9; ry: 9;
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,0.55))
+    drop-shadow(0 0 14px rgba(255,255,255,0.28))
+    drop-shadow(0 0 28px rgba(255,255,255,0.10));
+}
+.node.hub text.lbl {
+  fill: #ffffff !important;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.4));
+}
+.node.hub text.sub {
+  fill: #d8dbe6;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.node.hub text.hub-crown {
+  fill: #ffd84a;
+  font-size: 20px;
+  font-weight: 900;
+  pointer-events: none;
+  dominant-baseline: middle;
+  filter:
+    drop-shadow(0 0 3px rgba(255,216,74,0.8))
+    drop-shadow(0 0 7px rgba(255,216,74,0.35));
+}
+.node.hub:hover rect.outline {
+  stroke-width: 4 !important;
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.75))
+    drop-shadow(0 0 22px rgba(255,255,255,0.4));
+}
+.node.hub.selected rect.outline {
+  stroke-width: 5 !important;
+  filter:
+    drop-shadow(0 0 12px rgba(255,255,255,0.95))
+    drop-shadow(0 0 30px rgba(255,255,255,0.5));
+}
+.node { cursor: pointer; }
+.node rect.hit, .node polygon.hit { fill: transparent; stroke: transparent; }
+.node.has-clinical text.lbl { text-decoration: underline; text-decoration-color: rgba(245,196,81,0.85); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+.node:hover rect.outline,
+.node:hover polygon.outline { stroke-width: 3; filter: brightness(1.2); }
+.node.selected rect.outline,
+.node.selected polygon.outline { stroke-width: 4; filter: drop-shadow(0 0 8px var(--hub)) brightness(1.2); }
+
+/* GLUCOSE HEXAGON — the "START" ring */
+.node.start polygon.outline {
+  fill: #2b2511;
+  stroke: #ffd84a;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 10px rgba(255,216,74,0.45));
+}
+.node.start text.lbl {
+  fill: #ffd84a;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+.node.start text.sub {
+  fill: #f5deb3;
+  font-size: 13px;
+  font-weight: 600;
+}
+.node.start text.start-tag {
+  fill: #ffd84a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+/* edges */
+.edge path.line, .edge line.line { fill:none; stroke-width: 2; }
+.edge path.line.thick, .edge line.line.thick { stroke-width: 3.5; }
+.edge path.line.dashed, .edge line.line.dashed { stroke-dasharray: 5 4; }
+
+text.enz { font-size: 12px; font-style: italic; font-weight: 600; pointer-events:none; fill: #e6ecf5; }
+
+/* Enzyme class HIGHLIGHT — the class-defining word inside each enzyme
+   name (e.g. "carboxylase", "kinase", "DH") gets a translucent
+   colored box painted behind it. Same color = same enzyme family →
+   instant pattern recognition across the whole map. */
+tspan.ec-mark {
+  font-weight: 900 !important;
+  font-style: normal !important;
+  letter-spacing: 0.02em;
+}
+tspan.ec-carb { fill: #f7d8a8 !important; }
+tspan.ec-dh   { fill: #c4f5e6 !important; }
+tspan.ec-kin  { fill: #cfe1ff !important; }
+tspan.ec-tram { fill: #ffd0e2 !important; }
+tspan.ec-phos { fill: #c9eecb !important; }
+tspan.ec-red  { fill: #f9cce0 !important; }
+
+/* Translucent box painted behind the highlighted word */
+rect.ec-bg {
+  pointer-events: none;
+  fill-opacity: 0.22;
+  stroke-width: 1.5;
+  stroke-opacity: 0.80;
+}
+rect.ec-bg-carb { fill: #d4a574; stroke: #d4a574; }
+rect.ec-bg-dh   { fill: #8ae8cd; stroke: #8ae8cd; }
+rect.ec-bg-kin  { fill: #7eb5ff; stroke: #7eb5ff; }
+rect.ec-bg-tram { fill: #ff8fc2; stroke: #ff8fc2; }
+rect.ec-bg-phos { fill: #7dd984; stroke: #7dd984; }
+rect.ec-bg-red  { fill: #f48bc1; stroke: #f48bc1; }
+
+/* Cofactor substrate highlight — NAD/NADH/NADP/NADPH and FAD/FADH₂.
+   Colors match the vitamin chips in the sidebar (NAD = B3 orange,
+   FAD = B2 yellow) so the cross-reference is obvious. */
+tspan.cof-mark {
+  font-weight: 800 !important;
+  letter-spacing: 0.02em;
+}
+tspan.cof-nad { fill: #ffd49a !important; }   /* light B3 orange */
+tspan.cof-fad { fill: #fff09c !important; }   /* light B2 yellow */
+/* Cofactor highlight = flat color swipe (no border).
+   Looks like a highlighter mark instead of a chunky box → less visual
+   competition with the surrounding text. */
+rect.cof-bg {
+  pointer-events: none;
+  fill-opacity: 0.28;
+  stroke: none;
+}
+rect.cof-bg-nad { fill: #ffa64a; }
+rect.cof-bg-fad { fill: #fbe34d; }
+
+/* Clickable disease link inside a note — visibly underlined, hoverable */
+tspan.disease-link {
+  fill: #ff9ea2 !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,158,162,0.7);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  transition: fill 0.15s;
+}
+tspan.disease-link:hover {
+  fill: #ffd4d6 !important;
+  text-decoration-color: #ffd4d6;
+}
+
+/* Cross-reference link — cyan dashed underline; jumps to the real step */
+tspan.xref-link {
+  fill: #6ad6ff !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: rgba(106,214,255,0.75);
+  text-underline-offset: 2px;
+  transition: fill 0.15s;
+}
+tspan.xref-link:hover { fill: #b8e8ff !important; }
+
+/* Pulse — flashes a cross-reference target after the camera jumps to it */
+.xref-pulse path.line { animation: xrefPulseEdge 0.55s ease-in-out 3; }
+.xref-pulse rect.outline,
+.xref-pulse polygon.outline { animation: xrefPulseNode 0.55s ease-in-out 3; }
+@keyframes xrefPulseEdge {
+  0%, 100% { filter: none; }
+  50% { filter: drop-shadow(0 0 10px #6ad6ff) drop-shadow(0 0 18px #6ad6ff); }
+}
+@keyframes xrefPulseNode {
+  0%, 100% { filter: none; }
+  50% { filter: drop-shadow(0 0 12px #6ad6ff) drop-shadow(0 0 22px #6ad6ff); }
+}
+text.cof { font-size: 11px; fill: var(--cof); font-style: italic; pointer-events:none; font-weight:500; }
+text.reg { font-size: 10.5px; fill: var(--reg); pointer-events:none; font-weight:500; }
+text.note { font-size: 11px; fill: var(--note); pointer-events:none; font-weight:600; }
+
+/* HIGH-YIELD rate-limiting enzyme: bright gold, big, glow */
+text.enz.rl {
+  fill: #ffd84a !important;
+  font-size: 15.5px;
+  font-weight: 900;
+  font-style: normal;
+  letter-spacing: 0.02em;
+  filter:
+    drop-shadow(0 0 2px rgba(10,15,28,0.95))
+    drop-shadow(0 0 2px rgba(10,15,28,0.95))
+    drop-shadow(0 0 7px rgba(255,216,74,0.55));
+}
+.edge path.line.rl {
+  stroke-width: 5 !important;
+  filter: drop-shadow(0 0 3px rgba(255,216,74,0.55));
+}
+
+/* ESSENTIAL MODE — hide low-yield enzyme labels (and their highlight rects!) */
+svg.essential .edge-label.low-yield text,
+svg.essential .edge-label.low-yield rect.ec-bg,
+svg.essential .edge-label.low-yield rect.cof-bg { display: none; }
+svg.essential .edge.low-yield path.line,
+svg.essential .edge.low-yield line.line { opacity: 0.5; }
+
+.c-glyco { stroke: var(--p-glyco); }  text.c-glyco { fill: var(--p-glyco); stroke:none; }
+.c-gng   { stroke: var(--p-gng); }    text.c-gng   { fill: var(--p-gng);   stroke:none; }
+.c-tca   { stroke: var(--p-tca); }    text.c-tca   { fill: var(--p-tca);   stroke:none; }
+.c-etc   { stroke: var(--p-etc); }    text.c-etc   { fill: var(--p-etc);   stroke:none; }
+.c-ppp   { stroke: var(--p-ppp); }    text.c-ppp   { fill: var(--p-ppp);   stroke:none; }
+.c-glyg  { stroke: var(--p-glyg); }   text.c-glyg  { fill: var(--p-glyg);  stroke:none; }
+.c-fas   { stroke: var(--p-fas); }    text.c-fas   { fill: var(--p-fas);   stroke:none; }
+.c-box   { stroke: var(--p-box); }    text.c-box   { fill: var(--p-box);   stroke:none; }
+.c-keto  { stroke: var(--p-keto); }   text.c-keto  { fill: var(--p-keto);  stroke:none; }
+.c-chol  { stroke: var(--p-chol); }   text.c-chol  { fill: var(--p-chol);  stroke:none; }
+.c-urea  { stroke: var(--p-urea); }   text.c-urea  { fill: var(--p-urea);  stroke:none; }
+.c-aa    { stroke: var(--p-aa); }     text.c-aa    { fill: var(--p-aa);    stroke:none; }
+.c-heme  { stroke: var(--p-heme); }   text.c-heme  { fill: var(--p-heme);  stroke:none; }
+
+.tint-glyco rect.outline,  .tint-glyco polygon.outline  { stroke: var(--p-glyco); }
+.tint-gng rect.outline,    .tint-gng polygon.outline    { stroke: var(--p-gng); }
+.tint-tca rect.outline,    .tint-tca polygon.outline    { stroke: var(--p-tca); }
+.tint-etc rect.outline,    .tint-etc polygon.outline    { stroke: var(--p-etc); }
+.tint-ppp rect.outline,    .tint-ppp polygon.outline    { stroke: var(--p-ppp); }
+.tint-glyg rect.outline,   .tint-glyg polygon.outline   { stroke: var(--p-glyg); }
+.tint-fas rect.outline,    .tint-fas polygon.outline    { stroke: var(--p-fas); }
+.tint-box rect.outline,    .tint-box polygon.outline    { stroke: var(--p-box); }
+.tint-keto rect.outline,   .tint-keto polygon.outline   { stroke: var(--p-keto); }
+.tint-chol rect.outline,   .tint-chol polygon.outline   { stroke: var(--p-chol); }
+.tint-urea rect.outline,   .tint-urea polygon.outline   { stroke: var(--p-urea); }
+.tint-aa rect.outline,     .tint-aa polygon.outline     { stroke: var(--p-aa); }
+.tint-heme rect.outline,   .tint-heme polygon.outline   { stroke: var(--p-heme); }
+
+svg.isolated #edges > g,
+svg.isolated #edge-labels > g,
+svg.isolated #nodes > g { opacity: 0.08; transition: opacity 0.2s; }
+svg.isolated #edges > g.active,
+svg.isolated #edge-labels > g.active,
+svg.isolated #nodes > g.active { opacity: 1; }
+svg.isolated #panels > g { opacity: 0.22; transition: opacity 0.2s; }
+
+.pathway-label {
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  pointer-events:none;
+}
+
+/* ORGANELLE — stylized mitochondrion container */
+.organelle rect.mito-outer {
+  pointer-events: none;
+  fill-opacity: 0.04;
+  stroke-opacity: 0.50;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 20px rgba(232,151,48,0.10));
+}
+.organelle rect.mito-inner {
+  pointer-events: none;
+  fill: none;
+  stroke-opacity: 0.35;
+  stroke-width: 1.5;
+  stroke-dasharray: 14 8;
+}
+text.organelle-label {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  pointer-events: none;
+}
+text.organelle-sub {
+  font-size: 12px;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* SHUNT PATHWAYS — faint by default, light up when their disease is clicked */
+.shunt { opacity: 0.15; transition: opacity 0.25s; cursor: pointer; }
+.shunt.active { opacity: 1; }
+.shunt-arrow {
+  fill: none; stroke: #ff6b6f; stroke-width: 3; stroke-dasharray: 7 5;
+}
+.shunt.active .shunt-arrow { filter: drop-shadow(0 0 6px rgba(255,107,111,0.65)); }
+.shunt-box { fill: #2a1416; stroke: #ff6b6f; stroke-width: 2; }
+.shunt.active .shunt-box { filter: drop-shadow(0 0 9px rgba(255,107,111,0.55)); }
+text.shunt-lbl {
+  fill: #ffd4d6; font-size: 13px; font-weight: 800;
+  text-anchor: middle; dominant-baseline: middle; pointer-events: none;
+}
+text.shunt-sub {
+  fill: #f0a8ac; font-size: 10px; font-weight: 500;
+  text-anchor: middle; dominant-baseline: middle; pointer-events: none;
+}
+text.shunt-desc {
+  fill: #ff9ea2; font-size: 11px; font-style: italic; font-weight: 600;
+  pointer-events: none;
+}
+
+/* Red ✗ drawn over a blocked (deficient) enzyme step — kept semi-transparent
+   so the enzyme label underneath stays readable. */
+.block-x { animation: blockPop 0.28s ease-out; opacity: 0.8; }
+.block-x-disc { fill: #1a0a0c; fill-opacity: 0.45; stroke: #ff3b3f; stroke-width: 2.5; }
+.block-x-line {
+  stroke: #ff3b3f; stroke-width: 5; stroke-linecap: round;
+  filter: drop-shadow(0 0 5px rgba(255,59,63,0.7));
+}
+@keyframes blockPop { 0% { opacity: 0; } 70% { opacity: 0.9; } 100% { opacity: 0.8; } }
+
+/* UREA-CYCLE COMPARTMENT SPLIT — mito (top) vs cytosol (bottom) */
+.urea-zone-mito {
+  pointer-events: none;
+  fill: #e89730; fill-opacity: 0.07;
+  stroke: #e89730; stroke-opacity: 0.32; stroke-width: 1.5;
+}
+.urea-zone-cyto {
+  pointer-events: none;
+  fill: #5fa8d4; fill-opacity: 0.06;
+  stroke: #5fa8d4; stroke-opacity: 0.30; stroke-width: 1.5;
+}
+.urea-membrane {
+  stroke: #ffd84a; stroke-width: 2.5;
+  stroke-dasharray: 11 6; stroke-opacity: 0.7;
+  pointer-events: none;
+}
+text.urea-zone-label {
+  font-size: 17px; font-weight: 800; letter-spacing: 0.14em;
+  pointer-events: none;
+}
+text.urea-zone-label.mito { fill: #e89730; opacity: 0.72; }
+text.urea-zone-label.cyto { fill: #7ec8ee; opacity: 0.72; }
+text.urea-membrane-label {
+  font-size: 11px; font-style: italic; fill: #ffd84a;
+  opacity: 0.78; pointer-events: none;
+}
+
+/* PATHWAY BOXES — translucent grouping rectangles */
+.pathway-box rect {
+  pointer-events: none;
+  fill-opacity: 0.05;
+  stroke-opacity: 0.55;
+  stroke-width: 1.5;
+}
+text.box-label {
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* ENZYME-CLASS CHIPS — the "think in buckets" launcher */
+.enzclass-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+  margin-bottom: 6px;
+}
+.enzclass-chip {
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid var(--c, #2b3a5e);
+  color: var(--c, #fff);
+  border-radius: 7px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  transition: all 0.15s;
+}
+.enzclass-chip b { font-size: 12px; font-weight: 800; letter-spacing: 0.01em; }
+.enzclass-chip span { font-size: 9px; opacity: 0.78; font-weight: 500; margin-top: 1px; }
+.enzclass-chip:hover { background: rgba(255,255,255,0.09); transform: translateY(-1px); }
+.enzclass-chip.active {
+  background: var(--c);
+  color: #0a0f1c;
+  box-shadow: 0 0 12px var(--c);
+}
+.enzclass-chip.active b, .enzclass-chip.active span { color: #0a0f1c; opacity: 1; }
+
+/* DISEASE BROWSER — collapsible, grouped list in the sidebar */
+.disease-launch {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%;
+  background: rgba(255,90,95,0.08);
+  border: 1px solid rgba(255,90,95,0.35);
+  border-left: 3px solid var(--rl);
+  color: #ffd4d6;
+  border-radius: 7px;
+  padding: 8px 11px;
+  margin: 2px 0 6px 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+.disease-launch:hover { background: rgba(255,90,95,0.16); }
+.disease-launch .dl-caret { transition: transform 0.2s; opacity: 0.8; }
+.disease-launch.open .dl-caret { transform: rotate(180deg); }
+.disease-list { display: none; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.disease-list.open { display: flex; }
+.disease-group-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #8aa0c2;
+  margin: 7px 0 2px 2px;
+}
+.disease-row {
+  display: flex; flex-direction: column;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid #2b3a5e;
+  border-left: 3px solid rgba(255,90,95,0.5);
+  border-radius: 5px;
+  padding: 4px 9px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  line-height: 1.2;
+  transition: all 0.12s;
+}
+.disease-row b { font-size: 11.5px; font-weight: 700; color: #eef3fb; }
+.disease-row span { font-size: 9px; color: #9caec7; margin-top: 1px; }
+.disease-row:hover { background: rgba(255,90,95,0.13); transform: translateX(2px); }
+.disease-row.active { background: rgba(255,90,95,0.22); border-color: var(--rl); }
+.disease-row.active b { color: #ffd4d6; }
+
+/* VITAMIN CHIPS */
+.vit-hint { font-size: 11px; color:#b9c8e3; margin: 0 0 8px 0; line-height: 1.4; }
+.vit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.vit-chip {
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid var(--c, #2b3a5e);
+  color: var(--c, #fff);
+  border-radius: 7px;
+  padding: 6px 7px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+.vit-chip b { font-size: 13px; font-weight: 800; letter-spacing: 0.02em; }
+.vit-chip span { font-size: 9.5px; opacity: 0.75; font-weight: 500; margin-top: 2px; }
+.vit-chip:hover { background: rgba(255,255,255,0.08); transform: translateY(-1px); }
+.vit-chip.active {
+  background: var(--c);
+  color: #0a0f1c;
+  box-shadow: 0 0 12px var(--c);
+}
+.vit-chip.active b, .vit-chip.active span { color: #0a0f1c; opacity: 1; }
+
+/* TUTOR — launch button + lesson card */
+.tutor-launch {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  background: linear-gradient(135deg, #b8a4f5 0%, #f48bc1 100%);
+  color: #1a0a2e;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 4px 0 8px 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  box-shadow: 0 4px 16px rgba(184,164,245,0.25);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tutor-launch:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(184,164,245,0.4);
+}
+.tutor-launch .t-icon {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.tutor-launch .t-text { display: flex; flex-direction: column; line-height: 1.25; }
+.tutor-launch b { font-size: 13.5px; font-weight: 800; }
+.tutor-launch .t-sub { font-size: 10.5px; opacity: 0.75; font-weight: 500; margin-top: 1px; }
+
+/* Tour-picker menu — drops down under the Guided-tutor button */
+.tour-menu {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  margin: 2px 0 8px 0;
+}
+.tour-menu.open { display: flex; }
+.tour-item {
+  background: rgba(184,164,245,0.07);
+  border: 1px solid rgba(184,164,245,0.30);
+  border-left: 3px solid #b8a4f5;
+  border-radius: 7px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  transition: all 0.15s;
+}
+.tour-item b { font-size: 12.5px; font-weight: 800; color: #ede6fc; }
+.tour-item span { font-size: 10px; color: #b8a4f5; margin-top: 2px; }
+.tour-item:hover { background: rgba(184,164,245,0.16); transform: translateX(2px); }
+/* hide the menu while a tour is running */
+body.tutor-active .tour-menu { display: none; }
+
+/* Tutor lesson card — uses the right panel body */
+.tutor-card .lesson-counter {
+  font-size: 10.5px; color: #b8a4f5; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.tutor-card .lesson-content { font-size: 13px; line-height: 1.55; color: #e6ecf5; }
+.tutor-card .lesson-content p { margin: 8px 0; }
+.tutor-card .lesson-content ul, .tutor-card .lesson-content ol { margin: 6px 0 8px 0; padding-left: 22px; }
+.tutor-card .lesson-content li { margin: 3px 0; }
+.tutor-card .lesson-content b { color: #fff5d6; }
+.tutor-card .lesson-content i { color: #ffe7a3; font-style: normal; font-weight: 600; }
+
+/* Lesson content callout blocks */
+.tutor-card .lc-pearl, .tutor-card .lc-mnemonic, .tutor-card .lc-drug, .tutor-card .lc-clinical, .tutor-card .lc-warn {
+  margin: 8px 0;
+  padding: 8px 12px 8px 14px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  border-left: 3px solid;
+}
+.tutor-card .lc-pearl    { background: rgba(245,196,81,0.10); border-color: var(--hub); color: #fff5d6; }
+.tutor-card .lc-mnemonic { background: rgba(184,164,245,0.13); border-color: #b8a4f5; color: #ede6fc; }
+.tutor-card .lc-drug     { background: rgba(106,214,255,0.11); border-color: #6ad6ff; color: #dff1fc; }
+.tutor-card .lc-clinical { background: rgba(255, 90, 95, 0.13); border-color: var(--rl); color: #fbe5e6; }
+.tutor-card .lc-warn     { background: rgba(255, 90, 95, 0.18); border-color: var(--rl); color: #ffd4d6; font-weight: 600; }
+.tutor-card .lc-pearl b, .tutor-card .lc-pearl i      { color: #ffe7a3; }
+.tutor-card .lc-mnemonic b, .tutor-card .lc-mnemonic i { color: #d6c2ff; }
+.tutor-card .lc-drug b, .tutor-card .lc-drug i        { color: #b8e8ff; }
+.tutor-card .lc-clinical b, .tutor-card .lc-clinical i { color: #ffd4d6; }
+
+/* Tutor navigation buttons */
+.tutor-nav {
+  display: flex; gap: 8px;
+  margin-top: 14px;
+}
+.tutor-nav button {
+  flex: 1;
+  background: var(--panel-2);
+  color: var(--ink);
+  border: 1px solid #2b3a5e;
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tutor-nav button:hover:not(:disabled) { background: #2a3a5e; transform: translateY(-1px); }
+.tutor-nav button:disabled { opacity: 0.3; cursor: default; }
+.tutor-nav button.tutor-next {
+  background: linear-gradient(135deg, #b8a4f5 0%, #f48bc1 100%);
+  color: #1a0a2e;
+  border-color: transparent;
+}
+.tutor-nav button.tutor-next:hover { box-shadow: 0 4px 14px rgba(184,164,245,0.4); }
+
+/* Progress bar */
+.tutor-progress {
+  margin-top: 10px;
+  height: 4px;
+  background: #1a2438;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tutor-progress .bar {
+  height: 100%;
+  background: linear-gradient(90deg, #b8a4f5, #f48bc1, #ffd84a);
+  transition: width 0.3s;
+}
+
+/* Tutor active — slightly dim everything outside the lesson card */
+body.tutor-active #sidebar h2,
+body.tutor-active #sidebar .keyitem,
+body.tutor-active #sidebar .legend,
+body.tutor-active #sidebar .vit-grid,
+body.tutor-active #sidebar .hint,
+body.tutor-active #sidebar .controls,
+body.tutor-active #sidebar .vit-hint {
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+/* Mode toggle stays fully interactive during the tutor — you can flip
+   essential / comprehensive without leaving the lesson. */
+body.tutor-active #sidebar .mode-toggle { opacity: 1; pointer-events: auto; }
+body.tutor-active #tutor-start { display: none; }
+
+/* RIGHT PANEL */
+#rightpanel {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 380px;
+  background: linear-gradient(180deg, #0f1a30 0%, #0a1224 100%);
+  border-left: 1px solid #2b3a5e;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.4);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(.22,.61,.36,1);
+  overflow-y: auto;
+  z-index: 50;
+  color: #eef3fb;
+}
+#rightpanel.open { transform: translateX(0); }
+#rightpanel .rp-header {
+  position: sticky; top: 0;
+  padding: 14px 18px 12px 18px;
+  background: linear-gradient(180deg, #131e36 0%, #101a2e 100%);
+  border-bottom: 1px solid #2b3a5e;
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap: 10px;
+}
+#rightpanel .rp-title { font-size: 17px; font-weight: 800; letter-spacing:-0.01em; }
+#rightpanel .rp-tag {
+  display:inline-block; font-size: 10.5px; font-weight:700; padding: 2px 7px;
+  border-radius: 4px; margin-top:4px; text-transform:uppercase; letter-spacing:0.05em;
+}
+#rightpanel .rp-close {
+  background: #1c2741; color:#cfdcf5; border:1px solid #3a4c75;
+  border-radius: 6px; cursor:pointer; padding: 4px 8px; font-size: 13px;
+  flex-shrink:0;
+}
+#rightpanel .rp-close:hover { background:#2a3a5e; }
+#rightpanel .rp-body { padding: 14px 18px 24px 18px; }
+#rightpanel h3 {
+  font-size: 11px; color:#c0d2f0; margin: 14px 0 6px 0;
+  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+}
+#rightpanel .rp-why { font-size: 13.5px; line-height: 1.55; color:#e6ecf5; margin: 6px 0 0 0; }
+#rightpanel ul.pearls { list-style:none; padding:0; margin: 4px 0 0 0; }
+#rightpanel ul.pearls li {
+  font-size: 12.5px; line-height: 1.5; color:#dde6f5; margin: 0 0 7px 0;
+  padding: 5px 10px 5px 22px; position:relative;
+  border-radius: 5px;
+  background: rgba(245,196,81,0.06);
+  border-left: 3px solid rgba(245,196,81,0.55);
+}
+#rightpanel ul.pearls li:before {
+  content: '★'; position:absolute; left: 6px; top: 5px;
+  color: var(--hub); font-size: 11px; font-weight: 900;
+}
+#rightpanel ul.pearls li.warn {
+  background: rgba(255, 90, 95, 0.13);
+  border-left: 3px solid var(--rl);
+  color: #fbe5e6;
+}
+#rightpanel ul.pearls li.warn:before {
+  content: '⚠'; color: var(--rl); font-size: 12px; top: 5px;
+}
+#rightpanel ul.pearls li.drug {
+  background: rgba(106, 214, 255, 0.10);
+  border-left: 3px solid #6ad6ff;
+  color: #e0f1fc;
+}
+#rightpanel ul.pearls li.drug:before {
+  content: '℞'; color: #6ad6ff; font-size: 13px; font-weight: 700; top: 4px;
+}
+#rightpanel ul.pearls li.mnemonic {
+  background: rgba(184, 164, 245, 0.10);
+  border-left: 3px solid #b8a4f5;
+  color: #ede6fc;
+}
+#rightpanel ul.pearls li.mnemonic:before {
+  content: '◆'; color: #b8a4f5; font-size: 11px; top: 5px;
+}
+#rightpanel ul.pearls li b { color: #fff5d6; font-weight: 800; }
+#rightpanel ul.pearls li i { color: #ffe7a3; font-style: normal; font-weight: 700; }
+#rightpanel ul.pearls li.warn b, #rightpanel ul.pearls li.warn i { color: #ffd4d6; }
+#rightpanel ul.pearls li.drug b, #rightpanel ul.pearls li.drug i { color: #b8e8ff; }
+#rightpanel .rp-conn { font-size: 11.5px; color:#cad9f0; line-height: 1.6; }
+#rightpanel .rp-conn .arrow { color: var(--cof); margin: 0 4px; }
+#rightpanel .rp-empty { font-size: 12px; color:#9caec7; font-style: italic; margin-top: 8px; }
+
+#statusbar {
+  position: absolute; left: 16px; bottom: 16px;
+  background: rgba(15,22,40,0.92); border: 1px solid #2b3a5e;
+  padding: 8px 14px; border-radius: 8px;
+  font-size: 12px; color: var(--ink);
+  max-width: 50ch;
+  display: none;
+}
+#statusbar.visible { display: block; }
+#statusbar .sb-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+#statusbar .sb-sub { font-size: 11px; color: #c0d2f0; }
+
+#floatctrl {
+  position: absolute; right: 16px; bottom: 16px;
+  display:flex; flex-direction:column; gap:6px;
+  background: rgba(15,22,40,0.85); padding:8px; border-radius: 10px;
+  border:1px solid #2b3a5e;
+  z-index: 60;
+  transition: right 0.3s cubic-bezier(.22,.61,.36,1);
+}
+body.rp-open #floatctrl { right: 396px; }
+#floatctrl button {
+  width: 36px; height:36px; font-size:18px;
+  background: var(--panel-2); color:var(--ink);
+  border:1px solid #2b3a5e; border-radius:6px; cursor:pointer;
+}
+#floatctrl button:hover { background:#22325a; }
+#zoomdisplay {
+  font-size: 10.5px; color: #b9c8e3; text-align:center; padding-top:3px;
+}
+
+.infopanel rect { rx:8; ry:8; stroke-width:1.5; fill:#13181f; }
+.infopanel text { pointer-events:none; }

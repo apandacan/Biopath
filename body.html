@@ -1,0 +1,136 @@
+<div id="app">
+<aside id="sidebar">
+  <h1>Step 1 Biochem Map</h1>
+  <p class="intro">Click any metabolite to isolate it and see clinical pearls on the right. Drag to pan, scroll to zoom.</p>
+
+  <button id="tutor-start" class="tutor-launch" onclick="toggleTourMenu()">
+    <span class="t-icon">▶</span>
+    <span class="t-text">
+      <b>Guided tutor</b>
+      <span class="t-sub">pick a walkthrough ▾</span>
+    </span>
+  </button>
+  <div id="tour-menu" class="tour-menu"></div>
+
+  <div class="mode-toggle">
+    <label>
+      <input type="checkbox" id="comp-toggle">
+      <span class="switch"></span>
+      <span class="label-text">
+        Comprehensive mode
+        <span class="sub" id="mode-sub">OFF — showing only Step 1 high-yield enzymes</span>
+      </span>
+    </label>
+  </div>
+
+  <h2>Enzyme classes — think in buckets</h2>
+  <p class="vit-hint">Each class does ONE kind of reaction with ONE kind of cofactor. Click to highlight + learn the bucket.</p>
+  <div class="enzclass-grid" id="enzclass-grid">
+    <button class="enzclass-chip" data-ec="carb" style="--c:#d4a574"><b>Carboxylases</b><span>add CO₂ · biotin</span></button>
+    <button class="enzclass-chip" data-ec="dh"   style="--c:#8ae8cd"><b>Dehydrogenases</b><span>redox · NAD / FAD</span></button>
+    <button class="enzclass-chip" data-ec="kin"  style="--c:#7eb5ff"><b>Kinases</b><span>add phosphate · ATP</span></button>
+    <button class="enzclass-chip" data-ec="tram" style="--c:#ff8fc2"><b>Transaminases</b><span>move NH₂ · B6</span></button>
+    <button class="enzclass-chip" data-ec="phos" style="--c:#7dd984"><b>Phosphatases</b><span>remove Pi · water</span></button>
+    <button class="enzclass-chip" data-ec="red"  style="--c:#f48bc1"><b>Reductases</b><span>reduce · NADPH</span></button>
+  </div>
+
+  <h2>Vitamin cofactors — click to highlight</h2>
+  <p class="vit-hint">Click any vitamin to light up every reaction that needs it + open its clinical card.</p>
+  <div class="vit-grid" id="vit-grid">
+    <button class="vit-chip" data-vit="B1"     style="--c:#5fd0e0"><b>B1</b><span>thiamine</span></button>
+    <button class="vit-chip" data-vit="B2"     style="--c:#fbe34d"><b>B2</b><span>riboflavin</span></button>
+    <button class="vit-chip" data-vit="B3"     style="--c:#ffa64a"><b>B3</b><span>niacin</span></button>
+    <button class="vit-chip" data-vit="B5"     style="--c:#7eb5ff"><b>B5</b><span>pantothenate</span></button>
+    <button class="vit-chip" data-vit="B6"     style="--c:#ff8fc2"><b>B6</b><span>pyridoxine</span></button>
+    <button class="vit-chip" data-vit="B7"     style="--c:#d4a574"><b>B7</b><span>biotin</span></button>
+    <button class="vit-chip" data-vit="B9"     style="--c:#7dd984"><b>B9</b><span>folate</span></button>
+    <button class="vit-chip" data-vit="B12"    style="--c:#ff5e72"><b>B12</b><span>cobalamin</span></button>
+    <button class="vit-chip" data-vit="lipoic" style="--c:#c4a4ff"><b>Lipoic</b><span>acid</span></button>
+  </div>
+
+  <h2>Click legend → highlight pathway</h2>
+  <div class="legend" id="legend">
+    <div class="row" data-pathway="glyco"><div class="swatch" style="background:var(--p-glyco)"></div>Glycolysis</div>
+    <div class="row" data-pathway="gng"><div class="swatch" style="background:var(--p-gng)"></div>Gluconeogenesis</div>
+    <div class="row" data-pathway="tca"><div class="swatch" style="background:var(--p-tca)"></div>TCA / Krebs</div>
+    <div class="row" data-pathway="etc"><div class="swatch" style="background:var(--p-etc)"></div>ETC / Ox-Phos</div>
+    <div class="row" data-pathway="ppp"><div class="swatch" style="background:var(--p-ppp)"></div>Pentose phosphate (HMP)</div>
+    <div class="row" data-pathway="glyg"><div class="swatch" style="background:var(--p-glyg)"></div>Glycogen metabolism</div>
+    <div class="row" data-pathway="fas"><div class="swatch" style="background:var(--p-fas)"></div>Fatty acid synthesis</div>
+    <div class="row" data-pathway="box"><div class="swatch" style="background:var(--p-box)"></div>β-oxidation</div>
+    <div class="row" data-pathway="keto"><div class="swatch" style="background:var(--p-keto)"></div>Ketogenesis</div>
+    <div class="row" data-pathway="chol"><div class="swatch" style="background:var(--p-chol)"></div>Cholesterol synthesis</div>
+    <div class="row" data-pathway="urea"><div class="swatch" style="background:var(--p-urea)"></div>Urea cycle</div>
+    <div class="row" data-pathway="aa"><div class="swatch" style="background:var(--p-aa)"></div>Amino acid links (ALT / AST)</div>
+    <div class="row" data-pathway="heme"><div class="swatch" style="background:var(--p-heme)"></div>Heme synthesis branch</div>
+  </div>
+
+  <h2>Diseases — browse &amp; block</h2>
+  <p class="vit-hint">Click a disease to jump to the blocked enzyme (red ✗) + see where it shunts.</p>
+  <button id="disease-toggle" class="disease-launch" onclick="toggleDiseaseList()">
+    <span class="dl-label">🩺 Browse all diseases</span>
+    <span class="dl-caret">▾</span>
+  </button>
+  <div id="disease-list" class="disease-list"></div>
+
+  <h2>The 5 Hubs</h2>
+  <div class="keyitem"><b>G6P</b> — glycolysis / PPP / glycogen / gluconeogenesis</div>
+  <div class="keyitem"><b>Pyruvate</b> — 4-way: lactate, alanine, OAA, acetyl-CoA</div>
+  <div class="keyitem"><b>Acetyl-CoA</b> — TCA / FA synth / ketones / cholesterol</div>
+  <div class="keyitem"><b>OAA</b> — TCA / ↔ aspartate / → PEP</div>
+  <div class="keyitem"><b>α-KG</b> — TCA / transamination hub</div>
+
+  <h2>Reading the map</h2>
+  <div class="keyitem"><span class="rl">★ gold + glow</span> = rate-limiting enzyme</div>
+  <div class="keyitem"><span class="pill" style="background:#1a2f2a;color:#8ae8cd">cyan</span> = cofactor</div>
+  <div class="keyitem"><span class="pill" style="background:#22193a;color:#d6b9f3">purple</span> = regulator</div>
+  <div class="keyitem"><span class="pill" style="background:#2a1a1a;color:#f5bcbc">red</span> = clinical note</div>
+  <div class="keyitem">Underlined labels have a clinical pearl card</div>
+
+  <div class="controls">
+    <button onclick="fitAll()">Fit</button>
+    <button onclick="zoomBy(1.25)">+</button>
+    <button onclick="zoomBy(0.8)">−</button>
+    <button onclick="clearSelection()">Clear</button>
+  </div>
+  <p class="hint">Click a metabolite to isolate it + open its pearl card. Click empty space to clear.</p>
+</aside>
+
+<div id="canvas-container">
+  <div id="canvas-transform">
+    <svg id="map" viewBox="0 0 4200 3000" width="4200" height="3000" xmlns="http://www.w3.org/2000/svg">
+      <defs id="defs"></defs>
+      <g id="watermarks"></g>
+      <g id="organelles"></g>
+      <g id="pathway-boxes"></g>
+      <g id="panels"></g>
+      <g id="edges"></g>
+      <g id="shunts"></g>
+      <g id="nodes"></g>
+      <g id="edge-labels"></g>
+      <g id="disease-overlay"></g>
+    </svg>
+  </div>
+  <div id="statusbar">
+    <div class="sb-title" id="sb-title"></div>
+    <div class="sb-sub" id="sb-sub"></div>
+  </div>
+  <div id="floatctrl">
+    <button title="Zoom in" onclick="zoomBy(1.25)">+</button>
+    <button title="Zoom out" onclick="zoomBy(0.8)">−</button>
+    <button title="Fit to screen" onclick="fitAll()">⤢</button>
+    <button title="Clear selection" onclick="clearSelection()">⟳</button>
+    <div id="zoomdisplay">100%</div>
+  </div>
+  <aside id="rightpanel" aria-hidden="true">
+    <div class="rp-header">
+      <div>
+        <div class="rp-title" id="rp-title">—</div>
+        <div class="rp-tag" id="rp-tag">—</div>
+      </div>
+      <button class="rp-close" onclick="closePanel()" title="Close">×</button>
+    </div>
+    <div class="rp-body" id="rp-body"></div>
+  </aside>
+</div>
+</div>
