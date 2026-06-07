@@ -376,6 +376,15 @@ const SHUNT_ELS = [];
   });
 })();
 
+// "Same molecule" groups — a molecule that appears as >1 node (different
+// compartment or source). group key → [nodeId,…]; twinsOf(id) → other copies.
+const SAME_GROUPS = {};
+NODES.forEach(n => { if (n.same) (SAME_GROUPS[n.same] || (SAME_GROUPS[n.same] = [])).push(n.id); });
+function twinsOf(id) {
+  const n = NODE_INDEX[id];
+  return (n && n.same) ? (SAME_GROUPS[n.same] || []).filter(x => x !== id) : [];
+}
+
 const NODE_ELS = {};
 (function renderNodes() {
   const root = $('nodes');
@@ -432,6 +441,7 @@ const NODE_ELS = {};
       g.appendChild(makeText(cx, cy + lblOffset, n.label, 'lbl', 'middle'));
       if (n.sub) g.appendChild(makeText(cx, cy + 10, n.sub, 'sub', 'middle'));
       if (n.hub) g.appendChild(makeText(n.x + 16, cy + lblOffset, '♛', 'hub-crown', 'middle'));
+      if (n.same) g.appendChild(makeText(n.x + n.w - 16, cy + lblOffset, '⧉', 'twin-badge', 'middle'));
       const hit = document.createElementNS(svgNS, 'rect');
       hit.setAttribute('class', 'hit');
       hit.setAttribute('x', n.x-4); hit.setAttribute('y', n.y-4);
@@ -624,6 +634,18 @@ function openPanel(kind, key) {
     pearls.forEach(p => { body += `<li class="${p.cls||''}">${p.t}</li>`; });
     body += `</ul>`;
   }
+  if (kind === 'node') {
+    const twins = twinsOf(key);
+    if (twins.length) {
+      body += `<h3>⧉ Same molecule — also here</h3><div class="rp-conn">`;
+      twins.forEach(tid => {
+        const tn = NODE_INDEX[tid];
+        const where = tn.sub || PATHWAY_NAMES[tn.p] || tn.p;
+        body += `<div><span class="arrow">⧉</span><a class="rp-jump" onclick="focusXref('${tid}')">${tn.label}</a> <span style="color:#9caec7"> · ${where}</span></div>`;
+      });
+      body += `</div>`;
+    }
+  }
   if (kind === 'node' && conns.length) {
     body += `<h3>Connections</h3><div class="rp-conn">`;
     conns.forEach(c => {
@@ -650,7 +672,7 @@ window.closePanel = function() {
 function selectNode(id) {
   SELECTED = 'node:' + id;
   svg.classList.add('isolated');
-  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
   clearEdgesActive();
   const target = NODE_ELS[id];
   if (!target) return;
@@ -663,6 +685,11 @@ function selectNode(id) {
       if (other) other.classList.add('active');
     }
   });
+  // Light up + pulse this molecule's other copies elsewhere on the map
+  twinsOf(id).forEach(tid => {
+    const t = NODE_ELS[tid];
+    if (t) { t.classList.add('active', 'twin-active'); pulseEl(t); }
+  });
   document.querySelectorAll('#legend .row').forEach(r => r.classList.remove('active'));
   document.querySelectorAll('.vit-chip, .enzclass-chip, .disease-row').forEach(c => c.classList.remove('active'));
   showStatus(NODE_INDEX[id]);
@@ -672,7 +699,7 @@ function selectNode(id) {
 function selectPathway(pName) {
   SELECTED = 'pathway:' + pName;
   svg.classList.add('isolated');
-  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
   clearEdgesActive();
   NODES.forEach(n => {
     if (n.p === pName) NODE_ELS[n.id].classList.add('active');
@@ -695,7 +722,7 @@ function selectPathway(pName) {
 function selectVitamin(vit) {
   SELECTED = 'vit:' + vit;
   svg.classList.add('isolated');
-  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
   clearEdgesActive();
   EDGES.forEach((e, i) => {
     if (e.vits && e.vits.includes(vit)) {
@@ -748,7 +775,7 @@ function openVitaminPanel(vit) {
 function clearSelection() {
   SELECTED = null;
   svg.classList.remove('isolated');
-  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
   clearEdgesActive();
   clearDiseaseOverlay();
   document.querySelectorAll('.shunt').forEach(s => s.classList.remove('active'));
@@ -796,7 +823,7 @@ document.querySelectorAll('.vit-chip').forEach(c => {
 function selectEnzClass(cls) {
   SELECTED = 'enzclass:' + cls;
   svg.classList.add('isolated');
-  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
   clearEdgesActive();
   clearDiseaseOverlay();
   document.querySelectorAll('.shunt').forEach(s => s.classList.remove('active'));
@@ -894,7 +921,7 @@ function openDiseasePanel(key) {
   SELECTED = 'disease:' + key;
 
   // Reset prior highlight state
-  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
   clearEdgesActive();
   clearDiseaseOverlay();
   document.querySelectorAll('.shunt').forEach(s => s.classList.remove('active'));
@@ -993,7 +1020,7 @@ function focusXref(key) {
   const e = en.edge;
   SELECTED = 'xref:' + key;
   svg.classList.add('isolated');
-  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+  Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
   clearEdgesActive();
   document.querySelectorAll('#legend .row').forEach(r => r.classList.remove('active'));
   document.querySelectorAll('.vit-chip').forEach(c => c.classList.remove('active'));
@@ -1290,7 +1317,7 @@ function renderTutorStep() {
     const f = lesson.focus;
     // clear previous isolation state without closing the panel
     svg.classList.remove('isolated');
-    Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected'));
+    Object.values(NODE_ELS).forEach(el => el.classList.remove('active', 'selected', 'twin-active'));
     clearEdgesActive();
     document.querySelectorAll('#legend .row').forEach(r => r.classList.remove('active'));
     document.querySelectorAll('.vit-chip').forEach(c => c.classList.remove('active'));

@@ -44,14 +44,14 @@ const NODES = [
   { id:'pyruvate', label:'Pyruvate', sub:'3C  •  HUB', x:1920, y:1547, w:160, h:46, p:'glyco', hub:true },
   { id:'lactate', label:'Lactate', sub:'→ liver (Cori)', x:1500, y:1547, w:160, h:46, p:'aa' },
   { id:'alanine', label:'Alanine', sub:'Cahill cycle', x:1180, y:1697, w:160, h:46, p:'aa' },
-  { id:'acetylcoa', label:'Acetyl-CoA', sub:'2C  •  central HUB (mitochondrial)', x:1900, y:1745, w:200, h:50, p:'glyco', hub:true },
+  { id:'acetylcoa', label:'Acetyl-CoA', sub:'2C  •  central HUB (mitochondrial)', x:1900, y:1745, w:200, h:50, p:'glyco', hub:true, same:'acetylcoa' },
 
   // TCA
   { id:'citrate', label:'Citrate', sub:'6C', x:2000, y:2025, w:160, h:46, p:'tca' },
   { id:'isocitrate', label:'Isocitrate', sub:'6C', x:1800, y:2215, w:160, h:46, p:'tca' },
   { id:'akg', label:'α-KG', sub:'5C  •  HUB', x:1980, y:2415, w:160, h:46, p:'tca', hub:true },
   { id:'glutamate', label:'Glutamate', sub:'↔ Gln / NH₃', x:1580, y:2477, w:170, h:46, p:'aa' },
-  { id:'succoa', label:'Succinyl-CoA', sub:'→ heme synth', x:2280, y:2555, w:180, h:46, p:'tca' },
+  { id:'succoa', label:'Succinyl-CoA', sub:'→ heme synth', x:2280, y:2555, w:180, h:46, p:'tca', same:'succoa' },
   { id:'succinate', label:'Succinate', sub:'4C', x:2620, y:2439, w:150, h:46, p:'tca' },
   { id:'fumarate', label:'Fumarate', sub:'← urea cycle', x:2730, y:2249, w:160, h:46, p:'tca' },
   { id:'malate', label:'Malate', sub:'malate shuttle', x:2620, y:2069, w:150, h:46, p:'tca' },
@@ -68,24 +68,24 @@ const NODES = [
   { id:'g1p', label:'G1P', sub:'Glucose-1-P', x:2735, y:340, w:150, h:46, p:'glyg' },
 
   // FA synth
-  { id:'acetylcoa_c', label:'Acetyl-CoA', sub:'(cytosol) → FA / chol', x:2700, y:1748, w:200, h:46, p:'fas' },
+  { id:'acetylcoa_c', label:'Acetyl-CoA', sub:'(cytosol) → FA / chol', x:2700, y:1748, w:200, h:46, p:'fas', same:'acetylcoa' },
   { id:'maloncoa', label:'Malonyl-CoA', sub:'blocks CPT-1', x:3060, y:1748, w:180, h:46, p:'fas' },
   { id:'palmitate', label:'Palmitate', sub:'C16 saturated FA', x:3380, y:1748, w:180, h:46, p:'fas' },
 
   // β-ox  (positioned so CPT-1 crosses the mito membrane at y≈1860:
   //        fatty acid + cytosolic acyl-CoA ABOVE it, matrix acyl-CoA BELOW)
   { id:'fa', label:'Fatty acid', sub:'(cytosol)', x:3640, y:1654, w:160, h:46, p:'box' },
-  { id:'acylcoa_c', label:'Acyl-CoA', sub:'(cytosol)', x:3640, y:1774, w:160, h:46, p:'box' },
-  { id:'acylcoa_m', label:'Acyl-CoA', sub:'(mitochondrial matrix)', x:3640, y:1900, w:160, h:46, p:'box' },
+  { id:'acylcoa_c', label:'Acyl-CoA', sub:'(cytosol)', x:3640, y:1774, w:160, h:46, p:'box', same:'acylcoa' },
+  { id:'acylcoa_m', label:'Acyl-CoA', sub:'(mitochondrial matrix)', x:3640, y:1900, w:160, h:46, p:'box', same:'acylcoa' },
   { id:'boxloop', label:'β-ox spiral', sub:'−2C per round', x:3640, y:2030, w:160, h:46, p:'box' },
 
   // Ketogenesis
-  { id:'hmgcoa_m', label:'HMG-CoA', sub:'(mitochondrial) → ketones', x:2900, y:2415, w:200, h:46, p:'keto' },
+  { id:'hmgcoa_m', label:'HMG-CoA', sub:'(mitochondrial) → ketones', x:2900, y:2415, w:200, h:46, p:'keto', same:'hmgcoa' },
   { id:'aca', label:'Acetoacetate', sub:'ketone body', x:2900, y:2535, w:200, h:46, p:'keto' },
   { id:'bhb', label:'β-Hydroxybutyrate', sub:'major DKA ketone', x:2880, y:2655, w:240, h:46, p:'keto' },
 
   // Cholesterol
-  { id:'hmgcoa_c', label:'HMG-CoA', sub:'(cytosol) → cholesterol', x:3350, y:2415, w:200, h:46, p:'chol' },
+  { id:'hmgcoa_c', label:'HMG-CoA', sub:'(cytosol) → cholesterol', x:3350, y:2415, w:200, h:46, p:'chol', same:'hmgcoa' },
   { id:'mevalonate', label:'Mevalonate', sub:'→ isoprenoids', x:3350, y:2535, w:200, h:46, p:'chol' },
   { id:'cholesterol', label:'Cholesterol', sub:'→ steroids / bile / vit D', x:3350, y:2655, w:200, h:46, p:'chol' },
 
@@ -105,7 +105,7 @@ const NODES = [
   // Placed directly UNDER β-oxidation (its source) so the flow is local.
   { id:'propionylcoa', label:'Propionyl-CoA', sub:'3C · odd-chain FA + V/I/M/T', x:3600, y:2160, w:200, h:46, p:'aa' },
   { id:'mmcoa', label:'Methylmalonyl-CoA', sub:'', x:3590, y:2290, w:220, h:46, p:'aa' },
-  { id:'succ_b12', label:'Succinyl-CoA', sub:'re-enters TCA → glucose', x:3600, y:2410, w:200, h:46, p:'aa' },
+  { id:'succ_b12', label:'Succinyl-CoA', sub:'re-enters TCA → glucose', x:3600, y:2410, w:200, h:46, p:'aa', same:'succoa' },
 
   // ONE-CARBON, arm 2 — METHYLATION (homocysteine / methionine / folate).
   // Amino-acid / methylation / anemia content → left side.
