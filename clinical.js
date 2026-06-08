@@ -33,9 +33,22 @@ const CLIN = {
     why: 'The trapped, charged form of glucose. Branch point that decides 4 different fates.',
     pearls: [
       { t: '<b>4 fates</b>: glycolysis ↓, glycogen synth (G1P), PPP (NADPH/ribose), or G6Pase → free glucose.' },
+      { t: '<b>Made by Hexokinase</b> (ALL tissues · low Km · inhibited by G6P) <b>or Glucokinase</b> (LIVER + β-cells only · high Km · insulin-induced).', cls:'mnemonic' },
+      { t: '<b>Glucokinase = β-cell "glucose sensor"</b> — high Km means it only runs when glucose is HIGH (after a meal). MODY 2 = GK mutation.' },
       { t: 'G6P inhibits hexokinase (feedback) but <i>not glucokinase</i> — that\'s why GK keeps working in liver after a meal.' },
       { t: 'G6Pase is only in <b>liver / kidney / intestinal epithelium</b>. Muscle has none → muscle glycogen is selfish.', cls:'drug' },
       { t: '<b>Von Gierke (GSD I)</b>: G6Pase deficiency → severe fasting hypoglycemia + hepatomegaly + lactic acidosis + hyperuricemia + hyperlipidemia.', cls:'warn' },
+    ]
+  },
+  f26bp: {
+    why: 'The single most important regulator of glycolysis vs gluconeogenesis. F-2,6-BP is how the liver decides which direction to run — burn glucose or make it.',
+    pearls: [
+      { t: 'Made by <b>PFK-2</b> (from F6P), removed by <b>FBPase-2</b> — these are <b>ONE bifunctional enzyme</b> (PFK-2/FBPase-2) toggled by phosphorylation.', cls:'mnemonic' },
+      { t: '<b>⊕ Most potent activator of PFK-1</b> → pushes glycolysis forward.' },
+      { t: '<b>⊖ Inhibits fructose-1,6-bisphosphatase</b> → shuts gluconeogenesis off. One molecule works both levers, so the cell never runs both pathways at once.' },
+      { t: '<b>Fed / insulin</b>: the bifunctional enzyme is DEphosphorylated → PFK-2 active → ↑ F-2,6-BP → glycolysis ON.' },
+      { t: '<b>Fasting / glucagon</b> (cAMP → PKA phosphorylates it): FBPase-2 active → ↓ F-2,6-BP → gluconeogenesis ON.', cls:'mnemonic' },
+      { t: 'Fits the universal rule: <b>phosphorylation (glucagon/fasting) turns OFF glycolysis</b> and favors making glucose.', cls:'mnemonic' },
     ]
   },
   pyruvate: {
